@@ -22,12 +22,28 @@ public class MainActivity extends Activity {
     Sensor sensorLinAccel;
     Sensor sensorGravity;
     
-    boolean fallen_maybe = false;
-    boolean fallen = false;
-    
     StringBuilder sb = new StringBuilder();
     
     Timer timer;
+    
+    float time;
+    float deltaTime = 0.1f;
+    
+    float[] valuesAccel = new float[3];
+    float[] valuesAccel_subsequent = new float[3];
+    float[] valuesAccel_sum = new float[3];
+    
+    float[] valuesAccelMotion = new float[3];
+    float[] valuesAccelMotion_subsequent = new float[3];
+    float[] valuesAccelMotion_sum = new float[3];
+    
+    float[] valuesAccelGravity = new float[3];
+    
+    float[] valuesLinAccel = new float[3];
+    float[] valuesLinAccel_subsequent = new float[3];
+    float[] valuesLinAccel_sum = new float[3];
+    
+    float[] valuesGravity = new float[3];
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,10 +52,8 @@ public class MainActivity extends Activity {
         tvText = findViewById(R.id.tvText);
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         sensorAccel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorLinAccel = sensorManager
-                .getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        sensorLinAccel = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         sensorGravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
-        
     }
     
     @Override
@@ -59,7 +73,7 @@ public class MainActivity extends Activity {
                 runOnUiThread(MainActivity.this::showInfo);
             }
         };
-        timer.schedule(task, 0, 100);
+        timer.schedule(task, 0, (long) (1000 * deltaTime));
     }
     
     @Override
@@ -92,26 +106,15 @@ public class MainActivity extends Activity {
                 .append("\nAccel gravity : ").append(format(valuesAccelGravity))
                 .append("\nLin accel : ").append(format(valuesLinAccel))
                 .append("\nGravity : ").append(format(valuesGravity));
-        if (fallen) {
-            sb.append("\n\n_______FALLEN_______");
-        }
-        if (fallen_maybe && vectorLength(valuesAccel) < 20) {
-            fallen = true;
-        } else {
-            fallen_maybe = false;
-        }
-        if (vectorLength(valuesAccel) > 60) {
-            fallen_maybe = true;
-        }
-        System.out.println(vectorLength(valuesAccel) + "\t" + vectorLength(valuesLinAccel) + "\t" + vectorLength(valuesGravity));
+        
+        System.out.println(time +
+                "\t" + vectorLength(valuesAccel) +
+                "\t" + vectorLength(valuesAccel_subsequent) +
+                "\t" + vectorLength(valuesAccel_sum));
+        
+        time += deltaTime;
         tvText.setText(sb);
     }
-    
-    float[] valuesAccel = new float[3];
-    float[] valuesAccelMotion = new float[3];
-    float[] valuesAccelGravity = new float[3];
-    float[] valuesLinAccel = new float[3];
-    float[] valuesGravity = new float[3];
     
     SensorEventListener listener = new SensorEventListener() {
         
@@ -123,14 +126,41 @@ public class MainActivity extends Activity {
         public void onSensorChanged(SensorEvent event) {
             switch (event.sensor.getType()) {
                 case Sensor.TYPE_ACCELEROMETER:
+                    
                     for (int i = 0; i < 3; i++) {
                         valuesAccel[i] = event.values[i];
                         valuesAccelGravity[i] = (float) (0.1 * event.values[i] + 0.9 * valuesAccelGravity[i]);
                         valuesAccelMotion[i] = event.values[i] - valuesAccelGravity[i];
                     }
+                    
+                    valuesAccel_subsequent[0] = valuesAccel[0] - valuesAccel[1];
+                    valuesAccel_subsequent[1] = valuesAccel[1] - valuesAccel[2];
+                    valuesAccel_subsequent[2] = valuesAccel[2] - valuesAccel[0];
+                    
+                    valuesAccel_sum[0] = valuesAccel[0] + valuesAccel[1];
+                    valuesAccel_sum[1] = valuesAccel[1] + valuesAccel[2];
+                    valuesAccel_sum[2] = valuesAccel[2] + valuesAccel[0];
+    
+                    valuesAccelMotion_subsequent[0] = valuesAccelMotion[0] - valuesAccelMotion[1];
+                    valuesAccelMotion_subsequent[1] = valuesAccelMotion[1] - valuesAccelMotion[2];
+                    valuesAccelMotion_subsequent[2] = valuesAccelMotion[2] - valuesAccelMotion[0];
+    
+                    valuesAccelMotion_sum[0] = valuesAccelMotion[0] + valuesAccelMotion[1];
+                    valuesAccelMotion_sum[1] = valuesAccelMotion[1] + valuesAccelMotion[2];
+                    valuesAccelMotion_sum[2] = valuesAccelMotion[2] + valuesAccelMotion[0];
+                    
                     break;
                 case Sensor.TYPE_LINEAR_ACCELERATION:
                     System.arraycopy(event.values, 0, valuesLinAccel, 0, 3);
+    
+                    valuesLinAccel_subsequent[0] = valuesLinAccel[0] - valuesLinAccel[1];
+                    valuesLinAccel_subsequent[1] = valuesLinAccel[1] - valuesLinAccel[2];
+                    valuesLinAccel_subsequent[2] = valuesLinAccel[2] - valuesLinAccel[0];
+    
+                    valuesLinAccel_sum[0] = valuesLinAccel[0] + valuesLinAccel[1];
+                    valuesLinAccel_sum[1] = valuesLinAccel[1] + valuesLinAccel[2];
+                    valuesLinAccel_sum[2] = valuesLinAccel[2] + valuesLinAccel[0];
+                    
                     break;
                 case Sensor.TYPE_GRAVITY:
                     System.arraycopy(event.values, 0, valuesGravity, 0, 3);
