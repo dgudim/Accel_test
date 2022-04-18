@@ -96,7 +96,7 @@ public class MainActivity extends Activity {
     }
     
     float vectorLength(float[] vec) {
-        return (float) sqrt(vec[0] * vec[0] * vec[1] * vec[1] + vec[2] * vec[2]);
+        return (float) sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
     }
     
     void showInfo() {
